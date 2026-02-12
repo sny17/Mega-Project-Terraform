@@ -1,0 +1,87 @@
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+sudo apt install unzip -y
+unzip awscliv2.zip
+sudo ./aws/install
+aws configure
+
+
+# Update packages
+sudo apt-get update
+
+# Install required dependencies
+sudo apt-get install -y gnupg software-properties-common curl
+
+# Add HashiCorp GPG key
+curl -fsSL https://apt.releases.hashicorp.com/gpg | \
+sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+# Add HashiCorp repository
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+# Update and install Terraform
+sudo apt-get update
+sudo apt-get install -y terraform
+
+aws eks --region ap-south-1 update-kubeconfig --name sathya-cluster
+
+
+# Download latest stable kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+# Download checksum
+curl -LO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+
+# (Optional) Verify checksum
+echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+
+# Install kubectl
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+
+# Download latest eksctl
+curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz"
+
+# Extract
+tar -xzf eksctl_$(uname -s)_amd64.tar.gz
+
+# Move to /usr/local/bin
+sudo mv eksctl /usr/local/bin
+
+# Clean up
+rm eksctl_$(uname -s)_amd64.tar.gz
+
+
+eksctl utils associate-iam-oidc-provider \
+  --region ap-south-1 \
+  --cluster sathya-cluster \
+  --approve
+
+
+eksctl create iamserviceaccount \
+  --region ap-south-1 \
+  --name ebs-csi-controller-sa \
+  --namespace kube-system \
+  --cluster sathya-cluster \
+  --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+  --approve \
+  --override-existing-serviceaccounts
+
+kubectl apply -k \
+  "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
+
+kubectl apply -f \
+  https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+
+
+kubectl apply -f \
+  https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+
+kubectl get pods -n kube-system | grep ebs
+kubectl get pods -n ingress-nginx
+kubectl get pods -n cert-manager
+
+
+
+
