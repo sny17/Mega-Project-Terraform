@@ -58,6 +58,12 @@ eksctl utils associate-iam-oidc-provider \
   --cluster sathya-cluster \
   --approve
 
+# Replace with actual latest version
+wget https://get.helm.sh/helm-v4.0.4-linux-amd64.tar.gz
+tar -zxvf helm-v4.0.4-linux-amd64.tar.gz
+sudo mv linux-amd64/helm /usr/local/bin/helm
+helm version
+
 
 eksctl create iamserviceaccount \
   --region ap-south-1 \
