@@ -4,7 +4,7 @@ unzip awscliv2.zip
 sudo ./aws/install
 aws configure
 
-
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Update packages
 sudo apt-get update
 
@@ -23,10 +23,10 @@ sudo tee /etc/apt/sources.list.d/hashicorp.list
 # Update and install Terraform
 sudo apt-get update
 sudo apt-get install -y terraform
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 aws eks --region ap-south-1 update-kubeconfig --name sathya-cluster
 
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Download latest stable kubectl
 curl -LO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 
@@ -39,6 +39,8 @@ echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 # Install kubectl
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
+kubectl version --client
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Download latest eksctl
 curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz"
@@ -52,18 +54,19 @@ sudo mv eksctl /usr/local/bin
 # Clean up
 rm eksctl_$(uname -s)_amd64.tar.gz
 
-
+eksctl version
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 eksctl utils associate-iam-oidc-provider \
   --region ap-south-1 \
   --cluster sathya-cluster \
   --approve
-
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 # Replace with actual latest version
 wget https://get.helm.sh/helm-v4.0.4-linux-amd64.tar.gz
 tar -zxvf helm-v4.0.4-linux-amd64.tar.gz
 sudo mv linux-amd64/helm /usr/local/bin/helm
 helm version
-
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 eksctl create iamserviceaccount \
   --region ap-south-1 \
@@ -73,7 +76,7 @@ eksctl create iamserviceaccount \
   --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
   --approve \
   --override-existing-serviceaccounts
-
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 kubectl apply -k \
   "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
 
@@ -87,15 +90,13 @@ kubectl apply -f \
 kubectl get pods -n kube-system | grep ebs
 kubectl get pods -n ingress-nginx
 kubectl get pods -n cert-manager
-
+-----------------------------------------------------------------------------------------------------------------------------------------------------
 
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d; echo
-
-
 vim sc.yaml
 
 
